@@ -1,4 +1,4 @@
-module github.com/hashicorp/terraform-provider-scaffolding-framework
+module github.com/spilliams/terraform-provider-tree-example
 
 go 1.23.7
 
