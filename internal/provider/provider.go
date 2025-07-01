@@ -5,7 +5,6 @@ package provider
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -14,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/spilliams/tree-terraform-provider/pkg/storage/dynamodb"
 )
 
 const (
@@ -113,8 +113,22 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 		return
 	}
 
-	// Example client configuration for data sources and resources
-	client := http.DefaultClient
+	client, err := dynamodb.NewClient(ctx,
+		data.AWSProfile.ValueString(),
+		data.AWSRegion.ValueString(),
+		data.TableName.ValueString(),
+		data.KMSKeyARN.ValueString(),
+	)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Unable to create provider client",
+			"An unexpected error occurred when creating the provider client.\n\n"+
+				err.Error(),
+		)
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	resp.DataSourceData = client
 	resp.ResourceData = client
 }
