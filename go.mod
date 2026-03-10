@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.28.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-testing v1.13.2
-	github.com/spilliams/tree-terraform-provider v0.0.0-20250701170148-71a364357b18
+	github.com/spilliams/tree-terraform-provider v0.2.0
 )
 
 require (
