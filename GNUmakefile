@@ -1,15 +1,23 @@
 default: build
 
-build:
-	GOTOOLCHAIN=1.23.7 go build -a -ldflags '-s -extldflags "-static"'
+.PHONY: build
+build: bin/terraform-provider-tree
 
+bin/terraform-provider-tree:
+	go build -a -ldflags '-s -extldflags "-static"' -o bin/terraform-provider-tree
+
+.PHONY: fmt
 fmt:
 	gofmt -s -w -e .
 
+.PHONY: test
 test:
-	GOTOOLCHAIN=go1.23.7 go test -v -cover -timeout=120s -parallel=10 ./...
+	go test -v -cover -timeout=120s -parallel=10 ./...
 
+.PHONY: testacc
 testacc:
 	TF_ACC=1 go test -v -cover -timeout 120m ./...
 
-.PHONY: fmt lint test testacc build install generate
+.PHONY: docs
+docs:
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-dir . -provider-name tree
