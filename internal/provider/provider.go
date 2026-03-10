@@ -155,21 +155,9 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 }
 
 func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
-	return []func() resource.Resource{
-		NewExampleResource,
-	}
+	return blocks.AllResources()
 }
 
 func (p *ScaffoldingProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		NewExampleDataSource,
-	}
-}
-
-func New(version string) func() provider.Provider {
-	return func() provider.Provider {
-		return &ScaffoldingProvider{
-			version: version,
-		}
-	}
+	return blocks.AllDataSources()
 }
