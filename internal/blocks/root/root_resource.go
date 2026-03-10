@@ -136,7 +136,10 @@ func (r *RootResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 
 	state.ID = types.StringValue(real.ID())
-	state.SetAttributes(real.Attributes())
+	resp.Diagnostics.Append(state.SetAttributes(real.Attributes())...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)

@@ -8,7 +8,7 @@ import (
 
 func AllDataSources() []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		// root.NewDataSource,
+		root.NewDataSource,
 	}
 }
 

@@ -1,15 +1,13 @@
 package root
 
 import (
-	"context"
-
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-// ResourceModel describes the resource data model.
-type ResourceModel struct {
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
 	// required
 	Name types.String `tfsdk:"name"`
 	// computed
@@ -20,25 +18,9 @@ type ResourceModel struct {
 	Colors                types.List   `tfsdk:"colors"`
 }
 
-func (rm *ResourceModel) GetAttributes(ctx context.Context) (map[string]interface{}, diag.Diagnostics) {
-	attrs := make(map[string]interface{})
+func (dm *DataSourceModel) SetAttributes(attrs map[string]interface{}) diag.Diagnostics {
 	var diags diag.Diagnostics
-
-	if !rm.Colors.IsNull() {
-		colors := make([]string, len(rm.Colors.Elements()))
-		diags = rm.Colors.ElementsAs(ctx, &colors, false)
-		if diags.HasError() {
-			return nil, diags
-		}
-		attrs["colors"] = colors
-	}
-
-	return attrs, diags
-}
-
-func (rm *ResourceModel) SetAttributes(attrs map[string]interface{}) diag.Diagnostics {
 	colorsIface, present := attrs["colors"]
-	var diags diag.Diagnostics
 	if present {
 		colorsList, typed := colorsIface.([]string)
 		if typed {
@@ -46,7 +28,7 @@ func (rm *ResourceModel) SetAttributes(attrs map[string]interface{}) diag.Diagno
 			for i, az := range colorsList {
 				colorValues[i] = types.StringValue(az)
 			}
-			rm.Colors, diags = types.ListValue(types.StringType, colorValues)
+			dm.Colors, diags = types.ListValue(types.StringType, colorValues)
 		}
 	}
 	return diags
