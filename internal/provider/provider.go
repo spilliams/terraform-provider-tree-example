@@ -5,6 +5,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -13,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/spilliams/terraform-provider-tree-example/internal/blocks"
 	"github.com/spilliams/tree-terraform-provider/pkg/storage/dynamodb"
 )
 
@@ -23,15 +25,25 @@ const (
 	providerAttrKeyARN     = "kms_key_arn"
 )
 
-// Ensure ScaffoldingProvider satisfies various provider interfaces.
-var _ provider.Provider = &ScaffoldingProvider{}
-
 // ScaffoldingProvider defines the provider implementation.
 type ScaffoldingProvider struct {
 	// version is set to the provider version on release, "dev" when the
 	// provider is built and ran locally, and "test" when running acceptance
 	// testing.
 	version string
+	commit  string
+}
+
+// Ensure ScaffoldingProvider satisfies various provider interfaces.
+var _ provider.Provider = &ScaffoldingProvider{}
+
+func New(version, commit string) func() provider.Provider {
+	return func() provider.Provider {
+		return &ScaffoldingProvider{
+			version: version,
+			commit:  commit,
+		}
+	}
 }
 
 // ScaffoldingProviderModel describes the provider data model.
@@ -44,11 +56,12 @@ type ScaffoldingProviderModel struct {
 
 func (p *ScaffoldingProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "tree"
-	resp.Version = p.version
+	resp.Version = fmt.Sprintf("%s-%s", p.version, p.commit)
 }
 
 func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Interact with a tree of information.",
 		Attributes: map[string]schema.Attribute{
 			providerAttrAWSProfile: schema.StringAttribute{
 				Description: "The AWS profile to use for DynamoDB storage.",
@@ -71,10 +84,11 @@ func (p *ScaffoldingProvider) Schema(ctx context.Context, req provider.SchemaReq
 }
 
 func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	tflog.Info(ctx, "Configuring Tree client")
+
 	var data ScaffoldingProviderModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -94,6 +108,7 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 		)
 	}
 	ctx = tflog.SetField(ctx, providerAttrAWSRegion, data.AWSRegion.ValueString())
+
 	if data.TableName.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root(providerAttrTableName),
@@ -102,6 +117,7 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 		)
 	}
 	ctx = tflog.SetField(ctx, providerAttrTableName, data.TableName.ValueString())
+
 	if data.KMSKeyARN.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
 			path.Root(providerAttrKeyARN),
@@ -109,9 +125,12 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 			"Cannot configure the provider client with an unknown KMS Key ARN.",
 		)
 	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	tflog.Info(ctx, "Creating Tree DynamoDB client")
 
 	client, err := dynamodb.NewClient(ctx,
 		data.AWSProfile.ValueString(),
@@ -131,6 +150,8 @@ func (p *ScaffoldingProvider) Configure(ctx context.Context, req provider.Config
 	}
 	resp.DataSourceData = client
 	resp.ResourceData = client
+
+	tflog.Info(ctx, "Configured Tree client", map[string]any{"success": true})
 }
 
 func (p *ScaffoldingProvider) Resources(ctx context.Context) []func() resource.Resource {
