@@ -55,3 +55,21 @@ make testacc
 ```sh
 goreleaser release
 ```
+
+## Using the provider in production
+
+### Managing the DynamoDB table
+
+If you want to explicitly manage the DynamoDB table, you can do so with the module:
+
+```hcl
+provider "aws" {}
+
+module "this" {
+  source = "git@github.com:spilliams/tree-terraform-provider.git//terraform/module?ref=v0.2.0"
+
+  enable_table_guardian = false
+  kms_key_arn           = "foo"
+  table_name            = "bar"
+}
+```
